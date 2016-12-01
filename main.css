@@ -1,0 +1,21 @@
+html, body{
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.cover
+{
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: white;
+}
+
+.cover canvas
+{
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #00b2a6 0%,#0c4d7f 100%);
+}

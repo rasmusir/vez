@@ -1,0 +1,30 @@
+{
+    "requireCurlyBraces" : true,
+    "disallowMultipleSpaces" : true,
+    "validateIndentation" : 4,
+    "requireCapitalizedConstructors" : true,
+    "requireSemicolons" : true,
+    "requireSpaceAfterKeywords" : true,
+    "requireSpaceBetweenArguments": true,
+    "disallowVar": true,
+    "requireSpaceAfterBinaryOperators": [
+        "=",
+        ",",
+        "+",
+        "-",
+        "/",
+        "*",
+        "==",
+        "===",
+        "!=",
+        "!==",
+        "%",
+        "&&",
+        "||"
+    ],
+    "requireCurlyBraces": [
+        "for",
+        "while",
+        "switch"
+    ]
+}
