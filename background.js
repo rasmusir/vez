@@ -15,20 +15,19 @@
     {
         constructor(coverElement)
         {
-            this.shaders = {
-                points: {vert: null, frag: null},
-                lines: {vert: null, frag: null},
-                faces: {vert: null, frag: null}
-            };
+            this.coverElement = coverElement;
+            this.shaders = new ShaderCollection();
             this.mouse = {x: 0, y: 0};
             this.renderEnabled = true;
+
+            this.aspect = coverElement.clientWidth / coverElement.clientHeight;
 
             this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
             this.renderer.setSize(coverElement.clientWidth, coverElement.clientHeight);
             coverElement.appendChild(this.renderer.domElement);
 
             this.scene = new THREE.Scene();
-            this.camera = new THREE.OrthographicCamera(-0.5, 0.5, -0.5, 0.5, 1, 1000);
+            this.camera = new THREE.OrthographicCamera(-0.5 * this.aspect, 0.5 * this.aspect, -0.5, 0.5, 1, 1000);
             this.camera.position.z = 10;
             this.scene.add(this.camera);
 
@@ -37,46 +36,47 @@
 
         start()
         {
-            this.network = new Network(10, 10, this);
+            this.network = new Network(15, 15, this);
             this.scene.add(this.network.pointMesh);
             this.scene.add(this.network.lineMesh);
             this.scene.add(this.network.faceMesh);
             this.trackMouse();
+            this.trackWindowSize();
             this.render();
         }
 
         trackMouse()
         {
             window.addEventListener("mousemove", (e) => {
-                this.mouse.x = e.clientX / this.renderer.getSize().width - 0.5;
+                this.mouse.x = (e.clientX / this.renderer.getSize().width - 0.5) * this.aspect;
                 this.mouse.y = e.clientY / this.renderer.getSize().height - 0.5;
             });
+        }
 
-            window.addEventListener("touchmove", (e) => {
-                this.mouse.x = e.touches[0].clientX / this.renderer.getSize().width - 0.5;
-                this.mouse.y = e.touches[0].clientY / this.renderer.getSize().height - 0.5;
+        trackWindowSize()
+        {
+            window.addEventListener("resize", (e) => {
+                this.renderer.setSize(this.coverElement.clientWidth, this.coverElement.clientHeight);
+                this.aspect = this.coverElement.clientWidth / this.coverElement.clientHeight;
+                this.camera.bottom = 0.5;
+                this.camera.top = -0.5;
+                this.camera.left = -0.5 * this.aspect;
+                this.camera.right = 0.5 * this.aspect;
+                this.camera.updateProjectionMatrix();
             });
         }
 
         loadShaderPrograms()
         {
-            return Promise.all([
-                LoadFile("network.points.vert"), 
-                LoadFile("network.points.frag"),
-                LoadFile("network.lines.vert"), 
-                LoadFile("network.lines.frag"),
-                LoadFile("network.faces.vert"), 
-                LoadFile("network.faces.frag")
-            ]).then((shaders) => {
-                let s = 0;
-                this.shaders.points.vert = shaders[s++];
-                this.shaders.points.frag = shaders[s++];
-                this.shaders.lines.vert = shaders[s++];
-                this.shaders.lines.frag = shaders[s++];
-                this.shaders.faces.vert = shaders[s++];
-                this.shaders.faces.frag = shaders[s++];
-                return null;
-            });
+            return this.shaders.loadFromFiles(
+                "network.compute.glsl",
+                "network.points.vert",
+                "network.points.frag",
+                "network.lines.vert",
+                "network.lines.frag",
+                "network.faces.vert",
+                "network.faces.frag"
+            );
         }
 
         render()
@@ -109,41 +109,40 @@
             this.lines = this.generateLines(width, height, this.nodes);
             this.faces = this.generateFaces(width, height, this.nodes);
 
+            this.shaderUniforms = {
+                u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)},
+                u_time: {type: "float", value: 0.0}
+            };
+
             this.pointGeometry = this.buildPointGeometry(this.nodes);
             this.pointMaterial = new THREE.ShaderMaterial({
-                vertexShader: this.program.shaders.points.vert,
-                fragmentShader: this.program.shaders.points.frag,
+                vertexShader: this.program.shaders.get("network.points.vert"),
+                fragmentShader: this.program.shaders.get("network.points.frag"),
                 transparent: true, 
                 blending: THREE.AdditiveBlending,
                 depthTest: false, 
-                uniforms: {
-                    u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)}
-                }
+                uniforms: this.shaderUniforms
             });
 
             this.lineGeometry = this.buildLineGeometry(this.lines);
             this.lineMaterial = new THREE.ShaderMaterial({
-                vertexShader: this.program.shaders.lines.vert,
-                fragmentShader: this.program.shaders.lines.frag,
+                vertexShader: this.program.shaders.get("network.lines.vert"),
+                fragmentShader: this.program.shaders.get("network.lines.frag"),
                 transparent: true, 
                 blending: THREE.AdditiveBlending,
                 depthTest: false, 
-                uniforms: {
-                    u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)}
-                }
+                uniforms: this.shaderUniforms
             });
 
             this.faceGeometry = this.buildFaceGeometry(this.faces);
             this.faceNaterial = new THREE.ShaderMaterial({
-                vertexShader: this.program.shaders.faces.vert,
-                fragmentShader: this.program.shaders.faces.frag,
+                vertexShader: this.program.shaders.get("network.faces.vert"),
+                fragmentShader: this.program.shaders.get("network.faces.frag"),
                 transparent: true, 
                 blending: THREE.AdditiveBlending,
                 depthTest: false,
                 side: THREE.DoubleSide, 
-                uniforms: {
-                    u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)}
-                }
+                uniforms: this.shaderUniforms
             });
 
             this.pointMesh = new THREE.Points(this.pointGeometry, this.pointMaterial);
@@ -153,17 +152,12 @@
 
         compute()
         {
-            this.pointMaterial.uniforms.u_mouse.value.x = this.program.mouse.x;
-            this.pointMaterial.uniforms.u_mouse.value.y = this.program.mouse.y;
-            this.pointMaterial.uniforms.u_mouse.needsUpdate = true;
 
-            this.lineMaterial.uniforms.u_mouse.value.x = this.program.mouse.x;
-            this.lineMaterial.uniforms.u_mouse.value.y = this.program.mouse.y;
-            this.lineMaterial.uniforms.u_mouse.needsUpdate = true;
+            this.shaderUniforms.u_mouse.value.x = this.program.mouse.x;
+            this.shaderUniforms.u_mouse.value.y = this.program.mouse.y;
+            this.shaderUniforms.u_time.value += 0.016;
 
-            this.faceNaterial.uniforms.u_mouse.value.x = this.program.mouse.x;
-            this.faceNaterial.uniforms.u_mouse.value.y = this.program.mouse.y;
-            this.faceNaterial.uniforms.u_mouse.needsUpdate = true;
+            this.shaderUniforms.needsUpdate = true;
         }
 
         generateNodes(width, height)
@@ -351,6 +345,48 @@
             this.nodeB = n2;
             this.nodeC = n3;
             this.nodeD = n4;
+        }
+    }
+
+    class ShaderCollection
+    {
+        constructor()
+        {
+            this.files = {};
+            this.shaders = {};
+        }
+
+        get(name)
+        {
+            return this.shaders[name];
+        }
+
+        loadFromFiles(...files)
+        {
+            return Promise.all(files.map(LoadFile)).then((content) => {
+                let i = -1;
+                let file = null;
+                while (file = files[++i])
+                {
+                    this.files[file] = content[i];
+                }
+
+                for (let name in this.files)
+                {
+                    let file = this.files[name];
+                    this.shaders[name] = this.preProcessShader(file);
+                }
+            });
+        }
+
+        preProcessShader(shader)
+        {
+            return shader.replace(/#include\s+(.*)/, (match, file) => {
+                let imported = this.files[file];
+                if (typeof (imported) !== "undefined")
+                    return "//Content fetched from " + file + "\n" + imported + "\n//END OF IMPORT/n";
+                return "//Failure to import content from " + file + " was the file loaded?";
+            });
         }
     }
 
