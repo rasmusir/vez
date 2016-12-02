@@ -17,7 +17,7 @@
         {
             this.coverElement = coverElement;
             this.shaders = new ShaderCollection();
-            this.mouse = {x: 0, y: 0};
+            this.mouse = {x: 0, y: 0, down: false};
             this.renderEnabled = true;
 
             this.aspect = coverElement.clientWidth / coverElement.clientHeight;
@@ -50,6 +50,14 @@
             window.addEventListener("mousemove", (e) => {
                 this.mouse.x = (e.clientX / this.renderer.getSize().width - 0.5) * this.aspect;
                 this.mouse.y = e.clientY / this.renderer.getSize().height - 0.5;
+            });
+
+            window.addEventListener("mousedown", (e) => {
+                this.mouse.down = true;
+            });
+
+            window.addEventListener("mouseup", (e) => {
+                this.mouse.down = false;
             });
         }
 
@@ -104,6 +112,9 @@
             this.pointGeometry = null;
             this.lineGeometry = null;
             this.faceGeometry = null;
+            this.mouseClicked = false;
+            this.blowTarget = 0.0;
+            this.blowSpeed = 4.0;
             
             this.nodes = this.generateNodes(width, height);
             this.lines = this.generateLines(width, height, this.nodes);
@@ -157,6 +168,27 @@
             this.shaderUniforms.u_mouse.value.x = this.program.mouse.x;
             this.shaderUniforms.u_mouse.value.y = this.program.mouse.y;
             this.shaderUniforms.u_time.value += 0.016;
+            this.shaderUniforms.u_blow.value += (this.blowTarget - this.shaderUniforms.u_blow.value) / this.blowSpeed;
+
+            let upspeed = 2.2;
+
+            if (!this.mouseClicked && this.program.mouse.down)
+            {
+                this.blowTarget = 0.5;
+                this.mouseClicked = true;
+                this.blowSpeed = upspeed;
+            }
+
+            if (!this.program.mouse.down)
+            {
+                this.mouseClicked = false;
+            }
+
+            if (this.blowSpeed === upspeed && (this.blowTarget - this.shaderUniforms.u_blow.value) < 0.1)
+            {
+                this.blowTarget = 0.0;
+                this.blowSpeed = 40.0;
+            }
 
             this.shaderUniforms.needsUpdate = true;
         }

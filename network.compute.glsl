@@ -17,12 +17,12 @@ vec3 CalculatePositions(vec3 position)
 
     pos *= 1.5;
 
-    vec3 crazy = vec3(snoise(vec3(position.x * 4.0, position.y * 14.0, u_time / 5.0)) / 10.0,
-        snoise(vec3(position.x * 54.6456, position.y * 4353.765, u_time / 5.0)) / 10.0, 0.0);
+    vec3 crazy = vec3(snoise(vec3(position.x * 4.0, position.y * 14.0, u_time / 5.0)) / 20.0,
+        snoise(vec3(position.x * 54.6456, position.y * 4353.765, u_time / 5.0)) / 20.0, 0.0);
     
-    pos += mix(vec3(0.0), crazy, max(1.0 - distance(pos, u_mouse) * 4.0, 0.3));
+    pos += mix(vec3(0.0), crazy, max(1.0 - distance(pos, u_mouse) * 4.0, 0.3) + u_blow * 5.0);
 
-    pos.z = max(1.0 - distance(pos, u_mouse) * 4.0, 0.3) - 0.3 + u_blow;
+    pos.z = u_blow;
 
     float t = u_time / 20.0;
     /*
@@ -42,7 +42,7 @@ vec3 CalculatePositions(vec3 position)
     }
     */
     
-    pos.y += sin(u_time) / 60.0;
+    pos.y += sin(u_time) / 80.0;
     return pos;
 }
 
