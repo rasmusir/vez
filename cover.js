@@ -20,6 +20,7 @@
                 lines: {vert: null, frag: null},
                 faces: {vert: null, frag: null}
             };
+            this.mouse = {x: 0, y: 0};
             this.renderEnabled = true;
 
             this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
@@ -30,20 +31,31 @@
             this.camera = new THREE.OrthographicCamera(-0.5, 0.5, -0.5, 0.5, 1, 1000);
             this.camera.position.z = 10;
             this.scene.add(this.camera);
+
+            this.network = null;
         }
 
         start()
         {
-            let network = new Network(10, 10, this);
-            this.scene.add(network.pointMesh);
-            this.scene.add(network.lineMesh);
-            this.scene.add(network.faceMesh);
+            this.network = new Network(10, 10, this);
+            this.scene.add(this.network.pointMesh);
+            this.scene.add(this.network.lineMesh);
+            this.scene.add(this.network.faceMesh);
+            this.trackMouse();
             this.render();
         }
 
         trackMouse()
         {
-            
+            window.addEventListener("mousemove", (e) => {
+                this.mouse.x = e.clientX / this.renderer.getSize().width - 0.5;
+                this.mouse.y = e.clientY / this.renderer.getSize().height - 0.5;
+            });
+
+            window.addEventListener("touchmove", (e) => {
+                this.mouse.x = e.touches[0].clientX / this.renderer.getSize().width - 0.5;
+                this.mouse.y = e.touches[0].clientY / this.renderer.getSize().height - 0.5;
+            });
         }
 
         loadShaderPrograms()
@@ -72,7 +84,7 @@
             if (this.renderEnabled)
             {
                 requestAnimationFrame(() => this.render());
-
+                this.network.compute();
                 this.renderer.render(this.scene, this.camera);
             }
         }
@@ -103,7 +115,10 @@
                 fragmentShader: this.program.shaders.points.frag,
                 transparent: true, 
                 blending: THREE.AdditiveBlending,
-                depthTest: false
+                depthTest: false, 
+                uniforms: {
+                    u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)}
+                }
             });
 
             this.lineGeometry = this.buildLineGeometry(this.lines);
@@ -112,7 +127,10 @@
                 fragmentShader: this.program.shaders.lines.frag,
                 transparent: true, 
                 blending: THREE.AdditiveBlending,
-                depthTest: false
+                depthTest: false, 
+                uniforms: {
+                    u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)}
+                }
             });
 
             this.faceGeometry = this.buildFaceGeometry(this.faces);
@@ -122,12 +140,30 @@
                 transparent: true, 
                 blending: THREE.AdditiveBlending,
                 depthTest: false,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide, 
+                uniforms: {
+                    u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)}
+                }
             });
 
             this.pointMesh = new THREE.Points(this.pointGeometry, this.pointMaterial);
             this.lineMesh = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
             this.faceMesh = new THREE.Mesh(this.faceGeometry, this.faceNaterial);
+        }
+
+        compute()
+        {
+            this.pointMaterial.uniforms.u_mouse.value.x = this.program.mouse.x;
+            this.pointMaterial.uniforms.u_mouse.value.y = this.program.mouse.y;
+            this.pointMaterial.uniforms.u_mouse.needsUpdate = true;
+
+            this.lineMaterial.uniforms.u_mouse.value.x = this.program.mouse.x;
+            this.lineMaterial.uniforms.u_mouse.value.y = this.program.mouse.y;
+            this.lineMaterial.uniforms.u_mouse.needsUpdate = true;
+
+            this.faceNaterial.uniforms.u_mouse.value.x = this.program.mouse.x;
+            this.faceNaterial.uniforms.u_mouse.value.y = this.program.mouse.y;
+            this.faceNaterial.uniforms.u_mouse.needsUpdate = true;
         }
 
         generateNodes(width, height)
