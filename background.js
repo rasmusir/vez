@@ -36,7 +36,7 @@
 
         start()
         {
-            this.network = new Network(15, 15, this);
+            this.network = new Network(20, 20, this);
             this.scene.add(this.network.pointMesh);
             this.scene.add(this.network.lineMesh);
             this.scene.add(this.network.faceMesh);

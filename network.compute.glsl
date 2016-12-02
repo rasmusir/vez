@@ -1,5 +1,6 @@
 
 uniform float u_time;
+uniform vec3 u_mouse;
 
 const float PI = 3.141592;
 
@@ -13,12 +14,18 @@ vec3 CalculatePositions(vec3 position)
     vec3 dir2 = normalize(pos);
     pos -= dir2 * dist2 * dist2;
 
-    pos += vec3(snoise(vec3(position.x * 4.0, position.y * 14.0, u_time / 5.0)) / 15.0,
-        snoise(vec3(position.x * 54.6456, position.y * 4353.765, u_time / 5.0)) / 15.0, 0.0);
+    pos *= 1.5;
 
-    vec3 mouse = vec3(0.0);
-    float t = u_time / 20.0;
+    vec3 crazy = vec3(snoise(vec3(position.x * 4.0, position.y * 14.0, u_time / 5.0)) / 10.0,
+        snoise(vec3(position.x * 54.6456, position.y * 4353.765, u_time / 5.0)) / 10.0, 0.0);
     
+    pos += mix(vec3(0.0), crazy, max(1.0 - distance(pos, u_mouse) * 4.0, 0.3));
+
+    pos.z = max(1.0 - distance(pos, u_mouse) * 4.0, 0.3) - 0.3;
+
+    float t = u_time / 20.0;
+    /*
+    vec3 mouse = vec3(0.0);
     for (float i = 1.0; i < 4.0; i += 1.0)
     {
 
@@ -32,7 +39,7 @@ vec3 CalculatePositions(vec3 position)
         vec3 dir = normalize(mouse - pos);
         pos += dir * min(pow(max(1.0 - dist * 10.0, 0.0), 2.0), dist) * 0.5;
     }
-
+    */
     
     pos.y += sin(u_time) / 60.0;
     return pos;
