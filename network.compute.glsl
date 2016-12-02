@@ -1,6 +1,7 @@
 
 uniform float u_time;
 uniform vec3 u_mouse;
+uniform float u_blow;
 
 const float PI = 3.141592;
 
@@ -21,7 +22,7 @@ vec3 CalculatePositions(vec3 position)
     
     pos += mix(vec3(0.0), crazy, max(1.0 - distance(pos, u_mouse) * 4.0, 0.3));
 
-    pos.z = max(1.0 - distance(pos, u_mouse) * 4.0, 0.3) - 0.3;
+    pos.z = max(1.0 - distance(pos, u_mouse) * 4.0, 0.3) - 0.3 + u_blow;
 
     float t = u_time / 20.0;
     /*

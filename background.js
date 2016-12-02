@@ -111,7 +111,8 @@
 
             this.shaderUniforms = {
                 u_mouse: {type: "vector3", value: new THREE.Vector3(0, 0, 0)},
-                u_time: {type: "float", value: 0.0}
+                u_time: {type: "float", value: 0.0},
+                u_blow: {type: "float", value: 0.0}
             };
 
             this.pointGeometry = this.buildPointGeometry(this.nodes);
