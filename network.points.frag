@@ -8,5 +8,5 @@ void main()
 
     float circDot = 1.0 - dot(circCoord, circCoord);
 
-    gl_FragColor = vec4(color, min(1.0, circDot * 2.0) * 0.15);
+    gl_FragColor = vec4(color, min(1.0, circDot * 2.0) * 0.3);
 }

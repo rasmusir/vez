@@ -15,7 +15,7 @@ vec3 CalculatePositions(vec3 position)
     vec3 dir2 = normalize(pos);
     pos -= dir2 * dist2 * dist2;
 
-    pos *= 1.5;
+    pos *= 1.8;
 
     vec3 crazy = vec3(snoise(vec3(position.x * 4.0, position.y * 14.0, u_time / 5.0)) / 20.0,
         snoise(vec3(position.x * 54.6456, position.y * 4353.765, u_time / 5.0)) / 20.0, 0.0);

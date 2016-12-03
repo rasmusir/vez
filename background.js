@@ -66,10 +66,12 @@
             window.addEventListener("resize", (e) => {
                 this.renderer.setSize(this.coverElement.clientWidth, this.coverElement.clientHeight);
                 this.aspect = this.coverElement.clientWidth / this.coverElement.clientHeight;
+
                 this.camera.bottom = 0.5;
                 this.camera.top = -0.5;
                 this.camera.left = -0.5 * this.aspect;
                 this.camera.right = 0.5 * this.aspect;
+
                 this.camera.updateProjectionMatrix();
             });
         }
@@ -93,6 +95,8 @@
             {
                 requestAnimationFrame(() => this.render());
                 this.network.compute();
+                
+                let zoom = ( window.scrollY / window.innerHeight);
                 this.renderer.render(this.scene, this.camera);
             }
         }
@@ -168,6 +172,8 @@
             this.shaderUniforms.u_mouse.value.x = this.program.mouse.x;
             this.shaderUniforms.u_mouse.value.y = this.program.mouse.y;
             this.shaderUniforms.u_time.value += 0.016;
+
+            /*
             this.shaderUniforms.u_blow.value += (this.blowTarget - this.shaderUniforms.u_blow.value) / this.blowSpeed;
 
             let upspeed = 2.2;
@@ -189,6 +195,7 @@
                 this.blowTarget = 0.0;
                 this.blowSpeed = 40.0;
             }
+            */
 
             this.shaderUniforms.needsUpdate = true;
         }
